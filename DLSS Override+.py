@@ -1,7 +1,6 @@
 import sys, os, json, shutil, stat, getpass, hashlib
 from PyQt6 import QtWidgets, QtGui, QtCore
 
-# Mapping of keys to abbreviated labels.
 KEY_MAPPING = {
     "Disable_FG_Override": "FG",
     "Disable_RR_Override": "RR",
@@ -11,7 +10,6 @@ KEY_MAPPING = {
 }
 
 def compute_file_hash(path):
-    """Compute SHA-256 hash of a file."""
     h = hashlib.sha256()
     try:
         with open(path, "rb") as f:
@@ -22,11 +20,6 @@ def compute_file_hash(path):
     return h.hexdigest()
 
 def create_backup(main_path, backup_path, meta_path, log_func):
-    """
-    Create a backup of main_path and write meta data containing:
-      - original_hash: hash of file before modification
-      - modified_hash: hash of file after modification (initially same as original)
-    """
     try:
         shutil.copy2(main_path, backup_path)
         original_hash = compute_file_hash(main_path)
@@ -55,10 +48,6 @@ def save_backup_meta(meta_path, meta):
         print(f"Error saving backup meta: {e}")
 
 def update_backup_if_obsolete(main_path, backup_path, meta_path, log_func):
-    """
-    Checks if the file at main_path has been externally updated compared to our stored
-    meta ("modified_hash"). If so, create a new backup (i.e. treat the current file as new baseline).
-    """
     if not os.path.exists(backup_path) or not os.path.exists(meta_path):
         return create_backup(main_path, backup_path, meta_path, log_func)
     meta = load_backup_meta(meta_path)
@@ -72,12 +61,6 @@ def update_backup_if_obsolete(main_path, backup_path, meta_path, log_func):
     return meta
 
 def recursive_process(obj, keys_to_update, updates):
-    """
-    Recursively traverse the JSON object (dict or list) and change any occurrence
-    of a key (if its value is True) to False.
-    
-    'updates' is a dict mapping application names to a set of abbreviated labels.
-    """
     modified = False
     if isinstance(obj, dict):
         for key in keys_to_update:
@@ -105,10 +88,6 @@ def recursive_process(obj, keys_to_update, updates):
     return modified
 
 def modify_file(main_path, log_func):
-    """
-    Loads the JSON file at main_path, runs a recursive search to flip DLSS override keys
-    (if True) to False. Prior to modification, a backup is updated (or created) along with metadata.
-    """
     backup_path = main_path + ".backup"
     meta_path = main_path + ".backup.meta"
     meta = update_backup_if_obsolete(main_path, backup_path, meta_path, log_func)
@@ -118,9 +97,8 @@ def modify_file(main_path, log_func):
     except Exception as e:
         log_func(f"Error reading JSON: {e}")
         return False, None
-
     keys_to_update = list(KEY_MAPPING.keys())
-    updates = {}  # Collect per-application update info.
+    updates = {}
     modified = recursive_process(data, keys_to_update, updates)
     if modified:
         try:
@@ -135,21 +113,14 @@ def modify_file(main_path, log_func):
             return False, None
     else:
         log_func("No modifications were made. Either keys were not found or already set to False.")
-    
-    # Log a concise summary for each application.
     for app, changes in updates.items():
         summary = ", ".join(f"{abbr} ✓" for abbr in sorted(changes))
         log_func(f"{app}: {summary}")
-    
     if modified:
         log_func("Reboot recommended for changes to take effect.")
     return modified, meta
 
 def revert_file(main_path, log_func):
-    """
-    Reverts main_path to the backup version if the file has not been externally updated
-    since our last modification. Before copying, removes the read-only flag.
-    """
     backup_path = main_path + ".backup"
     meta_path = main_path + ".backup.meta"
     if not os.path.exists(backup_path) or not os.path.exists(meta_path):
@@ -176,7 +147,6 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("DLSS Override Editor")
         self.resize(800, 400)
-        # Track whether a process was performed in this session.
         self.session_processed = False
         self.setup_ui()
         self.apply_dark_theme()
@@ -185,8 +155,6 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
         layout = QtWidgets.QVBoxLayout(central)
-
-        # File path area.
         path_layout = QtWidgets.QHBoxLayout()
         self.path_edit = QtWidgets.QLineEdit()
         username = getpass.getuser()
@@ -197,13 +165,9 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         self.browse_button.clicked.connect(self.browse_file)
         path_layout.addWidget(self.browse_button)
         layout.addLayout(path_layout)
-
-        # Checkbox for read-only option (checked by default).
         self.readonly_checkbox = QtWidgets.QCheckBox("Set file as read-only after modifications")
         self.readonly_checkbox.setChecked(True)
         layout.addWidget(self.readonly_checkbox)
-
-        # Buttons: Process and Revert.
         btn_layout = QtWidgets.QHBoxLayout()
         self.process_button = QtWidgets.QPushButton("Process")
         self.process_button.clicked.connect(self.process_file)
@@ -212,21 +176,17 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         self.revert_button.clicked.connect(self.revert_file)
         btn_layout.addWidget(self.revert_button)
         layout.addLayout(btn_layout)
-
-        # Log area.
         self.log_text = QtWidgets.QTextEdit()
         self.log_text.setReadOnly(True)
         layout.addWidget(self.log_text)
 
     def apply_dark_theme(self):
         style = """
-        /* Main window */
         QWidget {
             background-color: #1e1e1e;
             color: #e0e0e0;
             font-family: "Segoe UI", sans-serif;
         }
-        /* Line edits and text edits */
         QLineEdit, QTextEdit {
             background-color: #2d2d30;
             border: 1px solid #3e3e42;
@@ -234,7 +194,6 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
             border-radius: 3px;
             color: #e0e0e0;
         }
-        /* Buttons */
         QPushButton {
             background-color: #007ACC;
             border: none;
@@ -249,7 +208,6 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         QPushButton:pressed {
             background-color: #003F73;
         }
-        /* Checkboxes */
         QCheckBox {
             spacing: 5px;
         }
@@ -283,12 +241,7 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         if not os.path.exists(file_path):
             QtWidgets.QMessageBox.critical(self, "Error", f"File not found:\n{file_path}")
             return
-        reply = QtWidgets.QMessageBox.question(
-            self,
-            "Confirm",
-            f"Are you sure you want to modify this file?\n{file_path}",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No
-        )
+        reply = QtWidgets.QMessageBox.question(self, "Confirm", f"Are you sure you want to modify this file?\n{file_path}", QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
         if reply != QtWidgets.QMessageBox.StandardButton.Yes:
             self.log("Operation cancelled by user.")
             return
@@ -307,34 +260,22 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         if not os.path.exists(file_path):
             QtWidgets.QMessageBox.critical(self, "Error", f"File not found:\n{file_path}")
             return
-        reply = QtWidgets.QMessageBox.question(
-            self,
-            "Confirm Revert",
-            f"Are you sure you want to revert changes to this file?\n{file_path}",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No
-        )
+        reply = QtWidgets.QMessageBox.question(self, "Confirm Revert", f"Are you sure you want to revert changes to this file?\n{file_path}", QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
         if reply != QtWidgets.QMessageBox.StandardButton.Yes:
             self.log("Revert cancelled by user.")
             return
         if revert_file(file_path, self.log):
             self.log("Revert successful.")
-            # If a process was performed in this session, revert resets net changes.
             if self.session_processed:
                 self.session_processed = False
             else:
-                # If no process was performed in this session, treat revert as a modification.
                 self.session_processed = True
         else:
             self.log("Revert failed or no valid backup available.")
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if self.session_processed:
-            reply = QtWidgets.QMessageBox.question(
-                self,
-                "Reboot Recommended",
-                "Changes have been made that require a reboot to take effect.\nWould you like to reboot now?",
-                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            )
+            reply = QtWidgets.QMessageBox.question(self, "Reboot Recommended", "Changes have been made that require a reboot to take effect.\nWould you like to reboot now?", QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
             if reply == QtWidgets.QMessageBox.StandardButton.Yes:
                 os.system("shutdown /r /t 0")
         event.accept()
