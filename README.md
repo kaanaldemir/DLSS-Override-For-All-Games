@@ -1,3 +1,7 @@
+<a href="https://www.buymeacoffee.com/kaanaldemir" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;">
+</a>
+
 # DLSS Override For All Games
 
 This is a simple, open-source tool for the community. It provides a graphical interface for modifying NVIDIA's `ApplicationStorage.json` file so that DLSS can be overriden for games that are not officially whitelisted.
