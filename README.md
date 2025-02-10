@@ -5,8 +5,10 @@ This is a simple, open-source tool for the community. It provides a graphical in
 
 The tool works by searching through the JSON file for specific DLSS override keys and flipping their values from `true` to `false`. It also creates a backup of the file (with metadata) so that you can revert the changes if needed. Note that if the file is updated externally (for example, by driver update), the backup will be refreshed to prevent reverting to an obsolete version.
 
-<p align="center">
-  <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" style="background-color:#ff4500; color:#fff; padding:15px; font-size:36px; font-weight:bold; border-radius:8px; text-decoration:none;">Direct download for the latest version.</a>
+<p align="left">
+  <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" style="background-color:#ff4500; color:#fff; padding:25px 50px; font-size:28px; font-weight:bold; border-radius:12px; text-decoration:none; display:inline-block;">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Icon_-_Download.svg/48px-Icon_-_Download.svg.png" alt="Download" style="vertical-align: middle; margin-right:15px;"> Download DLSS.Override+.exe
+  </a>
 </p>
 
 
