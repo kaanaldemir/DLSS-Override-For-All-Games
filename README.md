@@ -6,10 +6,11 @@ This is a simple, open-source tool for the community. It provides a graphical in
 The tool works by searching through the JSON file for specific DLSS override keys and flipping their values from `true` to `false`. It also creates a backup of the file (with metadata) so that you can revert the changes if needed. Note that if the file is updated externally (for example, by driver update), the backup will be refreshed to prevent reverting to an obsolete version.
 
 <p align="left">
-  <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" style="background-color:#ff4500; color:#fff; padding:25px 50px; font-size:28px; font-weight:bold; border-radius:12px; text-decoration:none; display:inline-block;">
-    <img src="https://unpkg.com/@primer/octicons/build/svg/download-24.svg" alt="Download Icon" style="vertical-align: middle; margin-right:15px;"> Download DLSS.Override+.exe
+  <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" title="Download DLSS.Override+.exe">
+    <img src="https://unpkg.com/@primer/octicons/build/svg/download-24.svg" alt="Download DLSS.Override+.exe" style="width:100px; height:auto; display:block;">
   </a>
 </p>
+
 
 <a href="https://www.buymeacoffee.com/kaanaldemir" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 163px !important;">
