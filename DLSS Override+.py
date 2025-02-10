@@ -1,7 +1,7 @@
-import sys, os, json, shutil, stat, getpass, hashlib
+import sys, os, json, shutil, stat, getpass, hashlib, subprocess, ctypes
 from PyQt6 import QtWidgets, QtGui, QtCore
 
-# Define a mapping from DLSS override key names to short labels
+# Mapping of full DLSS override key names to short labels for display.
 KEY_MAPPING = {
     "Disable_FG_Override": "FG",
     "Disable_RR_Override": "RR",
@@ -10,22 +10,24 @@ KEY_MAPPING = {
     "Disable_SR_Model_Override": "SR-M",
 }
 
-# Compute a SHA-256 hash of the file at the given path
+# Computes the SHA-256 hash of a file's contents.
 def compute_file_hash(path):
     h = hashlib.sha256()
     try:
         with open(path, "rb") as f:
+            # Read file in chunks of 8192 bytes
             for chunk in iter(lambda: f.read(8192), b""):
                 h.update(chunk)
     except Exception as e:
         print(f"Error computing hash: {e}")
     return h.hexdigest()
 
-# Create a backup of the file and save its hash metadata to a separate file
+# Creates a backup copy of the given file and writes its hash metadata to a JSON file.
 def create_backup(main_path, backup_path, meta_path, log_func):
     try:
-        shutil.copy2(main_path, backup_path)
+        shutil.copy2(main_path, backup_path)  # Copy the file with metadata preservation
         original_hash = compute_file_hash(main_path)
+        # Create metadata with both original and modified hash set to original hash
         meta = {"original_hash": original_hash, "modified_hash": original_hash}
         with open(meta_path, "w", encoding="utf-8") as f:
             json.dump(meta, f)
@@ -35,7 +37,7 @@ def create_backup(main_path, backup_path, meta_path, log_func):
         log_func(f"Error creating backup: {e}")
         return None
 
-# Load the backup metadata from the meta file
+# Loads backup metadata from the specified meta file.
 def load_backup_meta(meta_path):
     try:
         with open(meta_path, "r", encoding="utf-8") as f:
@@ -44,7 +46,7 @@ def load_backup_meta(meta_path):
     except Exception:
         return None
 
-# Save the backup metadata to the meta file
+# Saves the provided metadata to the specified meta file.
 def save_backup_meta(meta_path, meta):
     try:
         with open(meta_path, "w", encoding="utf-8") as f:
@@ -52,7 +54,8 @@ def save_backup_meta(meta_path, meta):
     except Exception as e:
         print(f"Error saving backup meta: {e}")
 
-# Check if the existing backup is obsolete (i.e. if the file has been changed externally)
+# Checks if the existing backup is obsolete (i.e. the file has been modified externally).
+# If so, it creates a new backup.
 def update_backup_if_obsolete(main_path, backup_path, meta_path, log_func):
     if not os.path.exists(backup_path) or not os.path.exists(meta_path):
         return create_backup(main_path, backup_path, meta_path, log_func)
@@ -66,14 +69,14 @@ def update_backup_if_obsolete(main_path, backup_path, meta_path, log_func):
         return create_backup(main_path, backup_path, meta_path, log_func)
     return meta
 
-# Recursively go through the JSON data and flip any DLSS override keys from True to False.
-# Also, log the changes in the 'updates' dictionary.
+# Recursively traverses the JSON object, flipping any DLSS override keys set to True to False.
+# It also logs which keys (abbreviated) were changed, storing them in the updates dictionary.
 def recursive_process(obj, keys_to_update, updates):
     modified = False
     if isinstance(obj, dict):
         for key in keys_to_update:
             if key in obj and obj[key] is True:
-                obj[key] = False
+                obj[key] = False  # Flip the key value to False
                 modified = True
                 identifier = obj.get("LocalId") or obj.get("DisplayName") or "Unknown"
                 updates.setdefault(identifier, set()).add(KEY_MAPPING.get(key, key))
@@ -95,7 +98,7 @@ def recursive_process(obj, keys_to_update, updates):
                     modified = True
     return modified
 
-# Modify the JSON file: update the DLSS keys, save the changes, and update the backup metadata.
+# Reads the JSON file, processes it to update DLSS keys, writes changes back, and updates metadata.
 def modify_file(main_path, log_func):
     backup_path = main_path + ".backup"
     meta_path = main_path + ".backup.meta"
@@ -122,6 +125,7 @@ def modify_file(main_path, log_func):
             return False, None
     else:
         log_func("No modifications were made. Either keys were not found or already set to False.")
+    # Log a summary of changes per application.
     for app, changes in updates.items():
         summary = ", ".join(f"{abbr} ✓" for abbr in sorted(changes))
         log_func(f"{app}: {summary}")
@@ -129,7 +133,7 @@ def modify_file(main_path, log_func):
         log_func("Reboot recommended for changes to take effect.")
     return modified, meta
 
-# Revert the file to its backup version, if available and if the file hasn't been modified externally.
+# Reverts the file to its backup version if it hasn't been modified externally.
 def revert_file(main_path, log_func):
     backup_path = main_path + ".backup"
     meta_path = main_path + ".backup.meta"
@@ -152,24 +156,64 @@ def revert_file(main_path, log_func):
         log_func(f"Error during revert: {e}")
         return False
 
-# Main GUI class for the DLSS Override Editor
+# Attempts to restart NVIDIA services. Runs the command with elevated rights if needed.
+# The command is run hidden and its output is captured and logged.
+def restart_services(log_func):
+    cmd = '/c net stop "NvContainerLocalSystem" && net start "NvContainerLocalSystem" && net stop "NVDisplay.ContainerLocalSystem" && net start "NVDisplay.ContainerLocalSystem"'
+    # Check if user is admin
+    if ctypes.windll.shell32.IsUserAnAdmin():
+        result = subprocess.run("cmd.exe " + cmd, shell=True, capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, text=True, encoding='utf-8', errors='replace')
+        log_func("Restart Services Output:")
+        log_func(result.stdout)
+        if result.stderr:
+            log_func("Errors:")
+            log_func(result.stderr)
+    else:
+        # If not admin, this call will trigger a UAC prompt while keeping the window hidden.
+        ret = ctypes.windll.shell32.ShellExecuteW(None, "runas", "cmd.exe", cmd, None, 0)
+        if ret <= 32:
+            log_func("Failed to launch elevated command for restarting services.")
+        else:
+            log_func("Restart services command launched. Windows should prompt for admin rights.")
+
+# Custom dialog that presents the user with three options: Restart Services, Reboot, or Do Nothing.
+class CloseActionDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Action Required")
+        layout = QtWidgets.QVBoxLayout(self)
+        label = QtWidgets.QLabel("Changes require a reboot or service restart to take effect.\nWhat would you like to do?")
+        layout.addWidget(label)
+        buttonLayout = QtWidgets.QHBoxLayout()
+        # Add the Restart Services button (with shield emoji) on the left
+        self.restartButton = QtWidgets.QPushButton("🛡️ Restart Services")
+        self.rebootButton = QtWidgets.QPushButton("Reboot")
+        self.noActionButton = QtWidgets.QPushButton("Do Nothing")
+        # Arrange buttons: Restart Services (left), Reboot (middle), Do Nothing (right)
+        buttonLayout.addWidget(self.restartButton)
+        buttonLayout.addWidget(self.rebootButton)
+        buttonLayout.addWidget(self.noActionButton)
+        layout.addLayout(buttonLayout)
+        # Connect each button to return a distinct integer value
+        self.restartButton.clicked.connect(lambda: self.done(1))
+        self.rebootButton.clicked.connect(lambda: self.done(2))
+        self.noActionButton.clicked.connect(lambda: self.done(0))
+
+# Main application window class.
 class DLSSOverrideApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("DLSS Override Editor")
         self.resize(800, 400)
-        # This flag tracks if any changes have been made during this session.
-        self.session_processed = False
+        self.session_processed = False  # Tracks if any changes were made in the current session.
         self.setup_ui()
         self.apply_dark_theme()
 
-    # Setup the UI components
+    # Set up UI elements: file path input, buttons, and log display.
     def setup_ui(self):
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
         layout = QtWidgets.QVBoxLayout(central)
-
-        # File path input and browse button
         path_layout = QtWidgets.QHBoxLayout()
         self.path_edit = QtWidgets.QLineEdit()
         username = getpass.getuser()
@@ -180,13 +224,9 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         self.browse_button.clicked.connect(self.browse_file)
         path_layout.addWidget(self.browse_button)
         layout.addLayout(path_layout)
-
-        # Checkbox to set the file as read-only after modifications
         self.readonly_checkbox = QtWidgets.QCheckBox("Set file as read-only after modifications")
         self.readonly_checkbox.setChecked(True)
         layout.addWidget(self.readonly_checkbox)
-
-        # Process and Revert buttons
         btn_layout = QtWidgets.QHBoxLayout()
         self.process_button = QtWidgets.QPushButton("Process")
         self.process_button.clicked.connect(self.process_file)
@@ -195,13 +235,11 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         self.revert_button.clicked.connect(self.revert_file)
         btn_layout.addWidget(self.revert_button)
         layout.addLayout(btn_layout)
-
-        # Log area to display output messages
         self.log_text = QtWidgets.QTextEdit()
         self.log_text.setReadOnly(True)
         layout.addWidget(self.log_text)
 
-    # Apply a dark theme with blue accents to the UI
+    # Applies a dark theme with blue accents.
     def apply_dark_theme(self):
         style = """
         QWidget {
@@ -248,11 +286,11 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         """
         self.setStyleSheet(style)
 
-    # Append a message to the log area
+    # Appends a message to the log display.
     def log(self, message):
         self.log_text.append(message)
 
-    # Open a file dialog to select the JSON file
+    # Opens a file dialog for the user to select the JSON file.
     def browse_file(self):
         current_path = self.path_edit.text().strip()
         initial_dir = os.path.dirname(current_path) if os.path.exists(current_path) else ""
@@ -260,7 +298,7 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         if file_path:
             self.path_edit.setText(file_path)
 
-    # Handle processing of the file (modify the JSON and update the backup)
+    # Processes the file by calling modify_file and sets the session flag.
     def process_file(self):
         file_path = self.path_edit.text().strip()
         if not os.path.exists(file_path):
@@ -281,7 +319,7 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
             except Exception as e:
                 self.log(f"Error setting file to read-only: {e}")
 
-    # Handle reverting the file to its backup state
+    # Reverts the file to its backup state and updates the session flag.
     def revert_file(self):
         file_path = self.path_edit.text().strip()
         if not os.path.exists(file_path):
@@ -294,7 +332,6 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
             return
         if revert_file(file_path, self.log):
             self.log("Revert successful.")
-            # Reset the session flag if changes are undone; if no process was done, treat revert as a change.
             if self.session_processed:
                 self.session_processed = False
             else:
@@ -302,13 +339,17 @@ class DLSSOverrideApp(QtWidgets.QMainWindow):
         else:
             self.log("Revert failed or no valid backup available.")
 
-    # When the window is closed, prompt the user to reboot if changes remain
+    # When closing, if changes were made, prompt the user with a custom dialog that offers:
+    # 1. Restart Services (left button)
+    # 2. Reboot (middle button)
+    # 3. Do Nothing (right button)
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         if self.session_processed:
-            reply = QtWidgets.QMessageBox.question(self, "Reboot Recommended", 
-                                                     "Changes have been made that require a reboot to take effect.\nWould you like to reboot now?",
-                                                     QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
-            if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            dialog = CloseActionDialog(self)
+            result = dialog.exec()
+            if result == 1:
+                restart_services(self.log)
+            elif result == 2:
                 os.system("shutdown /r /t 0")
         event.accept()
 
