@@ -7,7 +7,7 @@ The tool works by searching through the JSON file for specific DLSS override key
 
 <p align="left">
   <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" style="background-color:#ff4500; color:#fff; padding:25px 50px; font-size:28px; font-weight:bold; border-radius:12px; text-decoration:none; display:inline-block;">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/OOjs_UI_icon_download-ltr.svg/48px-OOjs_UI_icon_download-ltr.svg.png" alt="Download" style="vertical-align: middle; margin-right:15px;"> Download DLSS.Override+.exe
+    <img src="https://unpkg.com/@primer/octicons/build/svg/download-24.svg" alt="Download Icon" style="vertical-align: middle; margin-right:15px;"> Download DLSS.Override+.exe
   </a>
 </p>
 
