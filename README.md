@@ -1,13 +1,15 @@
 
 # DLSS Override For All Games
 
-<p align="center">
-  <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" style="background-color:#ff4500; color:#fff; padding:15px 30px; font-size:18px; font-weight:bold; border-radius:8px; text-decoration:none;">Download DLSS.Override+.exe</a>
-</p>
-
 This is a simple, open-source tool for the community. It provides a graphical interface for modifying NVIDIA's `ApplicationStorage.json` file so that DLSS can be overridden for games that are not officially whitelisted.
 
 The tool works by searching through the JSON file for specific DLSS override keys and flipping their values from `true` to `false`. It also creates a backup of the file (with metadata) so that you can revert the changes if needed. Note that if the file is updated externally (for example, by driver update), the backup will be refreshed to prevent reverting to an obsolete version.
+
+<p align="center">
+  <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" style="background-color:#ff4500; color:#fff; padding:15px; font-size:36px; font-weight:bold; border-radius:8px; text-decoration:none;">Direct download for the latest version.</a>
+</p>
+
+
 
 <a href="https://www.buymeacoffee.com/kaanaldemir" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 163px !important;">
