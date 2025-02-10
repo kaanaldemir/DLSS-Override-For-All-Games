@@ -7,11 +7,9 @@ The tool works by searching through the JSON file for specific DLSS override key
 
 <p align="left">
   <a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" style="background-color:#ff4500; color:#fff; padding:25px 50px; font-size:28px; font-weight:bold; border-radius:12px; text-decoration:none; display:inline-block;">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Icon_-_Download.svg/48px-Icon_-_Download.svg.png" alt="Download" style="vertical-align: middle; margin-right:15px;"> Download DLSS.Override+.exe
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/OOjs_UI_icon_download-ltr.svg/48px-OOjs_UI_icon_download-ltr.svg.png" alt="Download" style="vertical-align: middle; margin-right:15px;"> Download DLSS.Override+.exe
   </a>
 </p>
-
-
 
 <a href="https://www.buymeacoffee.com/kaanaldemir" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 163px !important;">
