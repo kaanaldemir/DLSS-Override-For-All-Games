@@ -1,12 +1,19 @@
-
 # DLSS Override For All Games
 
-This is a simple, open-source tool for the community. It provides a graphical interface for modifying NVIDIA's `ApplicationStorage.json` file so that DLSS can be overriden for games that are not officially whitelisted.
+This is a simple, open-source tool for the community. It provides a graphical interface for modifying NVIDIA's `ApplicationStorage.json` file so that Nvidia App can override games that are not officially whitelisted.
 
-The tool works by searching through the JSON file for specific DLSS override keys and flipping their values from `true` to `false`. It also creates a backup of the file (with metadata) so that you can revert the changes if needed. Note that if the file is updated externally (for example, by driver update), the backup will be refreshed to prevent reverting to an obsolete version.
+The tool works by searching through the JSON file for specific DLSS override keys and flipping their values from `true` to `false`. It also creates a backup of the file (with metadata) so that you can revert the changes if needed. Note that if the file is updated externally (for example, by driver update), the backup will be obsolete and will be ignored.
 
+<!-- GUI Screenshot -->
+![GUI Screenshot](https://github.com/kaanaldemir/DLSS-Override-For-All-Games/blob/main/screenshot.png)
+
+<a href="https://github.com/kaanaldemir/dlss-override-for-all-games/releases/latest/download/DLSS.Override%2B.exe" target="_blank">
+  <img src="https://github.com/kaanaldemir/DLSS-Override-For-All-Games/blob/main/dl.png" alt="Download" height="60" width="167">
+</a>
+<br>
+&thinsp;  <!-- A thin space -->
 <a href="https://www.buymeacoffee.com/kaanaldemir" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 163px !important;">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="45" width="167">
 </a>
 
 ## Features
